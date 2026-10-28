@@ -24,7 +24,7 @@ import java.util.concurrent.Executors;
 public class MainActivity extends ComponentActivity {
     EditText server, token, sys, dia, pulse, note, measured;
     TextView status;
-    Button camera, gallery, save, reset, historyButton;
+    Button camera, gallery, save, reset, historyButton, dashboardButton;
     SharedPreferences prefs;
     String id, frozen;
     boolean busy;
@@ -60,6 +60,7 @@ public class MainActivity extends ComponentActivity {
         note = field(box,"Примечание", "note", "", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         save = button(box,"Проверил — сохранить в таблицу", v -> save());
         historyButton = button(box,"История и средние за 30 дней", v -> history());
+        dashboardButton = button(box,"Графики и отчёт для врача", v -> {persist(); startActivity(new android.content.Intent(this,DashboardActivity.class));});
         reset = button(box,"Новое измерение", v -> new AlertDialog.Builder(this).setMessage("Очистить текущую запись? Если отправка завершилась ошибкой, сначала проверьте таблицу.").setPositiveButton("Очистить", (d,w) -> clear()).setNegativeButton("Отмена", null).show());
         status = new TextView(this); status.setTextSize(16); box.addView(status);
         if (!frozen.isEmpty()) { lockFields(true); message("Есть отправленная запись. Повторите отправку с тем же ID или проверьте таблицу перед новым измерением."); }
@@ -88,7 +89,7 @@ public class MainActivity extends ComponentActivity {
     @Override public void onPause() { super.onPause(); persist(); }
     void lockFields(boolean locked) { for (EditText f : new EditText[]{sys,dia,pulse,note,measured}) f.setEnabled(!locked); }
     void working(boolean value) {
-        busy=value; camera.setEnabled(!value); gallery.setEnabled(!value); save.setEnabled(!value); reset.setEnabled(!value); historyButton.setEnabled(!value);
+        busy=value; camera.setEnabled(!value); gallery.setEnabled(!value); save.setEnabled(!value); reset.setEnabled(!value); historyButton.setEnabled(!value); dashboardButton.setEnabled(!value);
         server.setEnabled(!value); token.setEnabled(!value); lockFields(value || !frozen.isEmpty());
     }
     void clear() {

@@ -1,0 +1,17 @@
+services:
+  proxy:
+    image: caddy:2
+    ports:
+      - "443:443"
+    environment:
+      APP_HOST: ${APP_HOST}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+    restart: unless-stopped
+volumes:
+  caddy_data:
+  caddy_config:

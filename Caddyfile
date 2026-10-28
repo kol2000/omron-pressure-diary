@@ -1,0 +1,8 @@
+{
+    auto_https disable_redirects
+    default_sni {$APP_HOST}
+}
+https://{$APP_HOST} {
+    tls internal
+    reverse_proxy api:8000
+}
