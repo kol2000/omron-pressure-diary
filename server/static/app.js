@@ -25,18 +25,20 @@ async function loadReport(){if(loading)return;if(!$('from').value||!$('to').valu
  try{report=await api(`/dashboard?from=${encodeURIComponent($('from').value)}&to=${encodeURIComponent($('to').value)}`);render();}catch(e){$('error').textContent=e.name==='AbortError'?'Время ожидания истекло. Повторите запрос.':e.message;$('error').hidden=false;}finally{loading=false;$('apply').disabled=false;}}
 function svgEl(tag,attrs={},text){const el=document.createElementNS(NS,tag);for(const [k,v]of Object.entries(attrs))el.setAttribute(k,String(v));if(text!==undefined)el.textContent=text;return el;}
 function chart(id,keys,spark=false){const svg=$(id);svg.replaceChildren();const rows=report.measurements;
+ const theme=getComputedStyle(document.documentElement);
+ for(const key of Object.keys(colors))colors[key]=theme.getPropertyValue('--plot-'+key).trim()||colors[key];
  const width=spark?100:Math.max(300,svg.parentElement.clientWidth),height=spark?38:svg.clientHeight||240;
  svg.setAttribute('viewBox',`0 0 ${width} ${height}`);if(!rows.length){if(!spark)svg.nextElementSibling.hidden=false;return;}if(!spark)svg.nextElementSibling.hidden=true;
  const margin=spark?{l:2,r:2,t:4,b:4}:{l:38,r:20,t:17,b:34};
  const times=rows.map(r=>new Date(r.measured_at).getTime()),first=times[0],last=times.at(-1);let low=Math.min(...rows.flatMap(r=>keys.map(k=>r[k]))),high=Math.max(...rows.flatMap(r=>keys.map(k=>r[k])));
  if(!spark){low=Math.max(0,Math.floor((low-8)/10)*10);high=Math.ceil((high+8)/10)*10;}else{low-=3;high+=3;}if(low===high)high+=10;
  const x=i=>margin.l+(last===first ? .5 : (times[i]-first)/(last-first))*(width-margin.l-margin.r),y=v=>height-margin.b-(v-low)/(high-low)*(height-margin.t-margin.b);
- if(!spark){for(let i=0;i<=4;i++){const value=low+(high-low)*i/4,py=y(value);svg.append(svgEl('line',{x1:margin.l,x2:width-margin.r,y1:py,y2:py,stroke:'#edf1eb','stroke-dasharray':'3 4'}));svg.append(svgEl('text',{x:margin.l-9,y:py+3,'text-anchor':'end'},Math.round(value)));}
+ if(!spark){for(let i=0;i<=4;i++){const value=low+(high-low)*i/4,py=y(value);svg.append(svgEl('line',{x1:margin.l,x2:width-margin.r,y1:py,y2:py,stroke:theme.getPropertyValue('--plot-grid').trim()||'#edf1eb','stroke-dasharray':'3 4'}));svg.append(svgEl('text',{x:margin.l-9,y:py+3,'text-anchor':'end'},Math.round(value)));}
   const indexes=[...new Set([0,Math.floor((rows.length-1)/2),rows.length-1])];indexes.forEach(i=>svg.append(svgEl('text',{x:x(i),y:height-10,'text-anchor':i===0?'start':i===rows.length-1?'end':'middle'},formatDate(rows[i].measured_at))));
  }
  keys.forEach(key=>{const points=rows.map((r,i)=>`${x(i)},${y(r[key])}`).join(' ');
   svg.append(svgEl('polyline',{points,fill:'none',stroke:colors[key],'stroke-width':spark?2:2.2,'stroke-linejoin':'round','stroke-linecap':'round'}));
-  if(!spark)rows.forEach((r,i)=>{const dot=svgEl('circle',{cx:x(i),cy:y(r[key]),r:rows.length>100?2:3.5,fill:colors[key],stroke:'white','stroke-width':1.5});dot.append(svgEl('title',{},`${formatDate(r.measured_at,{day:'numeric',month:'long',year:'numeric'})} ${new Date(r.measured_at).toLocaleTimeString('ru-RU',{timeZone:report.timezone})}: ${r[key]}`));svg.append(dot);});
+  if(!spark)rows.forEach((r,i)=>{const dot=svgEl('circle',{cx:x(i),cy:y(r[key]),r:rows.length>100?2:3.5,fill:colors[key],stroke:theme.getPropertyValue('--plot-border').trim()||'white','stroke-width':1.5});dot.append(svgEl('title',{},`${formatDate(r.measured_at,{day:'numeric',month:'long',year:'numeric'})} ${new Date(r.measured_at).toLocaleTimeString('ru-RU',{timeZone:report.timezone})}: ${r[key]}`));svg.append(dot);});
  });
 }
 function render(){const rows=report.measurements,count=rows.length;
@@ -53,6 +55,7 @@ function render(){const rows=report.measurements,count=rows.length;
  }
  $('empty').hidden=Boolean(count);chart('pressure-chart',['systolic','diastolic']);chart('pulse-chart',['pulse']);
 }
+window.addEventListener('diary-theme-change',()=>{if(report)render();});
 let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(report)render();},150);});
 window.addEventListener('beforeprint',()=>{if(report)render();});window.addEventListener('afterprint',()=>{if(report)render();});
 $('print').onclick=()=>window.print();

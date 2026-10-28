@@ -24,7 +24,7 @@ import java.util.concurrent.Executors;
 public class MainActivity extends ComponentActivity {
     EditText server, token, sys, dia, pulse, note, measured;
     TextView status;
-    Button camera, gallery, save, reset, historyButton, dashboardButton;
+    Button camera, gallery, save, reset, historyButton, dashboardButton, themeButton;
     SharedPreferences prefs;
     String id, frozen;
     boolean busy;
@@ -32,6 +32,7 @@ public class MainActivity extends ComponentActivity {
     ActivityResultLauncher<String> pickPhoto;
 
     @Override public void onCreate(Bundle state) {
+        Theme.apply(this);
         super.onCreate(state);
         prefs = getSharedPreferences("scanner", MODE_PRIVATE);
         id = prefs.getString("id", UUID.randomUUID().toString());
@@ -49,6 +50,9 @@ public class MainActivity extends ComponentActivity {
         });
         TextView title = new TextView(this); title.setText("Дневник давления"); title.setTextSize(28); box.addView(title);
         TextView hint = new TextView(this); hint.setText("Сфотографируйте экран целиком без бликов. Перед сохранением сравните все три числа с прибором."); box.addView(hint);
+        themeButton=button(box,Theme.dark(this)?"Светлая тема":"Тёмная тема",v->{
+            persist(); prefs.edit().putBoolean("dark_theme",!Theme.dark(this)).commit(); recreate();
+        });
         server = field(box,"Адрес сервера: https://…", "server", "", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
         token = field(box,"Токен доступа", "token", "", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
         camera = button(box,"Сфотографировать экран", v -> newScan(() -> takePhoto.launch(photoUri())));
@@ -89,7 +93,7 @@ public class MainActivity extends ComponentActivity {
     @Override public void onPause() { super.onPause(); persist(); }
     void lockFields(boolean locked) { for (EditText f : new EditText[]{sys,dia,pulse,note,measured}) f.setEnabled(!locked); }
     void working(boolean value) {
-        busy=value; camera.setEnabled(!value); gallery.setEnabled(!value); save.setEnabled(!value); reset.setEnabled(!value); historyButton.setEnabled(!value); dashboardButton.setEnabled(!value);
+        busy=value; camera.setEnabled(!value); gallery.setEnabled(!value); save.setEnabled(!value); reset.setEnabled(!value); historyButton.setEnabled(!value); dashboardButton.setEnabled(!value); themeButton.setEnabled(!value);
         server.setEnabled(!value); token.setEnabled(!value); lockFields(value || !frozen.isEmpty());
     }
     void clear() {

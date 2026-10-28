@@ -25,6 +25,7 @@ public class DashboardActivity extends ComponentActivity {
     ValueCallback<Uri[]> fileCallback;
     ActivityResultLauncher<String> filePicker;
     @Override public void onCreate(Bundle state) {
+        Theme.apply(this);
         super.onCreate(state);
         filePicker=registerForActivityResult(new ActivityResultContracts.GetContent(),uri->{
             if(fileCallback!=null){fileCallback.onReceiveValue(uri==null?null:new Uri[]{uri});fileCallback=null;}

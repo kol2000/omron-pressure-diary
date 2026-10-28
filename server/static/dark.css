@@ -1,0 +1,50 @@
+:root{--plot-systolic:#268b79;--plot-diastolic:#c5a363;--plot-pulse:#8199b8;--plot-grid:#edf1eb;--plot-border:#fff}
+.theme-toggle{white-space:nowrap;border:1px solid #dce4df;border-radius:9px;padding:7px 10px;font-size:12px}
+.login-card{position:relative}.login-card>.theme-toggle{position:absolute;right:24px;top:29px;width:auto;display:block;font-size:11px}
+@media screen{
+html[data-theme=dark]{color-scheme:dark;--plot-systolic:#62c7b5;--plot-diastolic:#d9b979;--plot-pulse:#a0b9dd;--plot-grid:#34423b;--plot-border:#1d2b24}
+html[data-theme=dark] body{background:#111b16;color:#e0e9e1}
+html[data-theme=dark] .topbar{background:#17231d;border-color:#2e3c33}
+html[data-theme=dark] .brand-mark,html[data-theme=dark] button.primary{background:#287f6b;color:#f2fff9}
+html[data-theme=dark] button.primary:hover{background:#32917c}
+html[data-theme=dark] .eyebrow{color:#91b5a1}
+html[data-theme=dark] .muted,html[data-theme=dark] .quiet,html[data-theme=dark] .report-line p,html[data-theme=dark] .metric-label,html[data-theme=dark] .legend,html[data-theme=dark] .date-fields label{color:#a4b6a7}
+html[data-theme=dark] .metric,html[data-theme=dark] .panel,html[data-theme=dark] .login-card{background:#1b2821;border-color:#334238}
+html[data-theme=dark] .count-card{background:#203429}
+html[data-theme=dark] .metric p,html[data-theme=dark] .panel-heading p,html[data-theme=dark] .metric-value small,html[data-theme=dark] td.note-cell,html[data-theme=dark] footer{color:#a1b3a3}
+html[data-theme=dark] .count-icon{color:#63806c}
+html[data-theme=dark] .presets{background:#1d2b23}
+html[data-theme=dark] .presets button{color:#a5b7aa}
+html[data-theme=dark] .presets button.selected{background:#354d3f;color:#e0f5e9;box-shadow:none}
+html[data-theme=dark] .secondary,html[data-theme=dark] .date-fields input,html[data-theme=dark] .login-card input,html[data-theme=dark] dialog input:not([type=checkbox],[type=file]),html[data-theme=dark] textarea{background:#17231c;color:#dfe9e2;border-color:#405146}
+html[data-theme=dark] .secondary:hover{background:#2a3b30}
+html[data-theme=dark] .theme-toggle{border-color:#3c5143;color:#bfcec2}
+html[data-theme=dark] input:focus,html[data-theme=dark] textarea:focus{outline-color:#437c64;border-color:#6bad8d}
+html[data-theme=dark] .chart-wrap text{fill:#a5b8a9}
+html[data-theme=dark] th{background:#17241c;color:#b0c0b2;border-color:#324137}
+html[data-theme=dark] td{border-color:#2d3c32}
+html[data-theme=dark] td:first-child{color:#bdcdc0}
+html[data-theme=dark] td .time{color:#95ab9b}
+html[data-theme=dark] .reading.sys-text{color:#6dceba}
+html[data-theme=dark] .reading.dia-text{color:#dfc186}
+html[data-theme=dark] .reading.pulse-text{color:#a6bfdf}
+html[data-theme=dark] .sync-badge{background:#243d2d;border-color:#38523f;color:#b0d8b7}
+html[data-theme=dark] .sync-badge.waiting{background:#3c3421;border-color:#655635;color:#e2cd9c}
+html[data-theme=dark] .sync-check{color:#9dcaac}
+html[data-theme=dark] .sync-wait{color:#d9bf83}
+html[data-theme=dark] .pulse-symbol{color:#a4bfe0}
+html[data-theme=dark] .login{background:radial-gradient(ellipse at 15% 10%,#263e30,transparent 65%),#101a14}
+html[data-theme=dark] .login-card{box-shadow:0 20px 60px #0003}
+html[data-theme=dark] .login-card label,html[data-theme=dark] dialog label{color:#acbeb0}
+html[data-theme=dark] dialog{background:#1a2820;color:#e0e9e1;border-color:#42584a;box-shadow:0 20px 100px #0008}
+html[data-theme=dark] dialog::backdrop{background:#020b077d}
+html[data-theme=dark] .photo-upload{background:#20372a;border-color:#5a7e65}
+html[data-theme=dark] .icon-button,html[data-theme=dark] #recognition-status{color:#a7c9b3}
+html[data-theme=dark] .empty-state{color:#a0b6a5}
+html[data-theme=dark] .empty-state h3{color:#d2e6d8}
+html[data-theme=dark] #error{background:#462b28}
+html[data-theme=dark] #save-error,html[data-theme=dark] #login-error,html[data-theme=dark] #error{color:#ffb9af}
+html[data-theme=dark] #toast{background:#d1e5d8;color:#163124;box-shadow:0 5px 30px #0004}
+}
+@media(max-width:760px){.theme-toggle{font-size:10px;padding:6px 8px}.header-actions{gap:4px}.header-actions a{display:none}.brand{font-size:14px;gap:7px}.topbar{gap:8px;padding:0 14px}.header-actions .quiet{padding:6px}.login-card>.theme-toggle{right:22px;top:26px}}
+@media print{html{color-scheme:light!important}.theme-toggle{display:none!important}}
