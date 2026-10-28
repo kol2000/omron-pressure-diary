@@ -7,7 +7,7 @@ const colors={systolic:'#268b79',diastolic:'#c5a363',pulse:'#8199b8'};
 function localDate(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function dateTime(d){return `${localDate(d)}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;}
 function formatDate(value,options={day:'numeric',month:'short'}){return new Date(value).toLocaleDateString('ru-RU',{...options,timeZone:report?.timezone||'Europe/Moscow'});}
-function formatNumber(n){return n==null?'—':Number(n).toLocaleString('ru-RU',{maximumFractionDigits:1});}
+function formatNumber(n){return n==null?'—':Number(n).toLocaleString('ru-RU',{maximumFractionDigits:0});}
 function toast(message){$('toast').textContent=message;$('toast').hidden=false;setTimeout(()=>$('toast').hidden=true,6000);}
 async function api(path,options={}){
  const headers={...(options.body instanceof Blob?{}:{'Content-Type':'application/json'}),'X-CSRF-Token':csrf,...options.headers};
@@ -76,3 +76,4 @@ $('measurement-form').onsubmit=async e=>{e.preventDefault();$('save-error').text
  try{const result=await api('/measurements',{method:'POST',body:JSON.stringify(frozen)});if(!result.saved)throw new Error('Сервер не подтвердил сохранение');sessionStorage.removeItem('omron-pending');frozen=null;$('measurement').close();toast(result.synced?'Сохранено на сервере и в Google':'Сохранено. Google Таблица обновится автоматически.');await loadReport();}catch(e){$('save-error').textContent=e.name==='AbortError'?'Ответ не получен. Повторите сохранение с тем же ID.':e.message;$('save').textContent='Повторить сохранение';}finally{$('save').disabled=false;$('close-dialog').disabled=false;}};
 setInterval(()=>{if(report&&!document.hidden&&!$('measurement').open)loadReport();},60000);
 init();
+
