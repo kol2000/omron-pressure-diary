@@ -1,5 +1,7 @@
 'use strict';
 const $=id=>document.getElementById(id), NS='http://www.w3.org/2000/svg';
+const isAndroidApp=navigator.userAgent.includes('OmronDiaryAndroid');
+if(isAndroidApp)document.body.classList.add('android-app');
 let csrf='',report=null,currentId='',frozen=null,previewUrl='',loading=false;
 const colors={systolic:'#268b79',diastolic:'#c5a363',pulse:'#8199b8'};
 function localDate(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
@@ -14,10 +16,10 @@ async function api(path,options={}){
   const data=await response.json();if(!response.ok){if(response.status===401&&path!='/auth/login'){showLogin();}throw new Error(data.error||'Не удалось выполнить запрос');}return data;
  }finally{clearTimeout(timer);}
 }
-function showLogin(){$('app').hidden=true;$('login').hidden=false;report=null;$('rows').replaceChildren();}
+function showLogin(){$('app').hidden=true;$('login').hidden=false;report=null;$('rows').replaceChildren();if(isAndroidApp)window.location.href='omron-action://reconnect';}
 async function init(){try{const state=await api('/auth/session');csrf=state.csrf||'';if(!state.authenticated){showLogin();return;}$('login').hidden=true;$('app').hidden=false;preset(30);await loadReport();}catch(e){showLogin();$('login-error').textContent='Сервер недоступен. Проверьте подключение.';}}
 $('login-form').addEventListener('submit',async e=>{e.preventDefault();$('login-error').textContent='';const button=e.submitter;button.disabled=true;try{const state=await api('/auth/login',{method:'POST',body:JSON.stringify({token:$('token').value.trim()})});csrf=state.csrf;$('token').value='';await init();}catch(error){$('login-error').textContent=error.message;}finally{button.disabled=false;}});
-$('logout').onclick=async()=>{try{await api('/auth/logout',{method:'POST',body:'{}'});sessionStorage.removeItem('omron-pending');showLogin();}catch(e){toast(e.message);}};
+$('logout').onclick=async()=>{if(isAndroidApp){window.location.href='omron-action://disconnect';return;}try{await api('/auth/logout',{method:'POST',body:'{}'});sessionStorage.removeItem('omron-pending');showLogin();}catch(e){toast(e.message);}};
 function preset(days){const end=new Date(),start=new Date();start.setDate(end.getDate()-days+1);$('from').value=localDate(start);$('to').value=localDate(end);document.querySelectorAll('[data-days]').forEach(b=>b.classList.toggle('selected',Number(b.dataset.days)===days));}
 document.querySelectorAll('[data-days]').forEach(button=>button.onclick=()=>{preset(Number(button.dataset.days));loadReport();});
 $('apply').onclick=()=>{document.querySelectorAll('[data-days]').forEach(b=>b.classList.remove('selected'));loadReport();};
@@ -58,7 +60,7 @@ function render(){const rows=report.measurements,count=rows.length;
 window.addEventListener('diary-theme-change',()=>{if(report)render();});
 let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(report)render();},150);});
 window.addEventListener('beforeprint',()=>{if(report)render();});window.addEventListener('afterprint',()=>{if(report)render();});
-$('print').onclick=()=>window.print();
+$('print').onclick=()=>{if(isAndroidApp)window.location.href='omron-action://print';else window.print();};
 function csvValue(value){let s=String(value??'');if(/^[\s]*[=+@\-]/.test(s))s="'"+s;return '"'+s.replaceAll('"','""')+'"';}
 $('csv').onclick=()=>{if(!report)return;const lines=[['Дата','Время','Верхнее','Нижнее','Пульс','Примечание']];for(const r of report.measurements)lines.push([formatDate(r.measured_at,{day:'2-digit',month:'2-digit',year:'numeric'}),new Date(r.measured_at).toLocaleTimeString('ru-RU',{timeZone:report.timezone}),r.systolic,r.diastolic,r.pulse,r.note]);const blob=new Blob(['\ufeff'+lines.map(row=>row.map(csvValue).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`pressure-${report.period.from}-${report.period.to}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
 function freezeFields(locked){for(const id of ['systolic','diastolic','pulse','measured','note','confirmed','photo'])$(id).disabled=locked;}
