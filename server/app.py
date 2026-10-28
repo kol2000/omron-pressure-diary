@@ -28,7 +28,7 @@ login_lock=threading.Lock()
 
 @app.before_request
 def authenticate():
-    if request.path in ['/', '/auth/login','/auth/mobile','/auth/session'] or request.path.startswith('/static/'):
+    if request.path in ['/', '/favicon.ico', '/auth/login','/auth/mobile','/auth/session'] or request.path.startswith('/static/'):
         return
     if secrets.compare_digest(request.headers.get('Authorization', '').encode(), ('Bearer ' + TOKEN).encode()):
         return
@@ -52,6 +52,11 @@ def private_response(response):
 @app.get('/')
 def dashboard_page():
     return app.send_static_file('index.html')
+
+
+@app.get('/favicon.ico')
+def favicon():
+    return redirect('/static/favicon.svg')
 
 
 @app.post('/auth/login')
