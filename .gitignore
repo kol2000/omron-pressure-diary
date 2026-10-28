@@ -1,0 +1,15 @@
+.env
+secrets/
+*.sqlite*
+__pycache__/
+.gradle/
+local.properties
+build/
+*.apk
+backups/
+*.jks
+*.keystore
+*.jpg
+*.jpeg
+*.png
+*.log
