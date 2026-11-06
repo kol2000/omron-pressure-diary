@@ -9,15 +9,63 @@ function dateTime(d){return `${localDate(d)}T${String(d.getHours()).padStart(2,'
 function formatDate(value,options={day:'numeric',month:'short'}){return new Date(value).toLocaleDateString('ru-RU',{...options,timeZone:report?.timezone||'Europe/Moscow'});}
 function formatNumber(n){return n==null?'—':Number(n).toLocaleString('ru-RU',{maximumFractionDigits:0});}
 function toast(message){$('toast').textContent=message;$('toast').hidden=false;setTimeout(()=>$('toast').hidden=true,6000);}
-async function api(path,options={}){
+async function api(path,options={},retryCsrf=true){
  const headers={...(options.body instanceof Blob?{}:{'Content-Type':'application/json'}),'X-CSRF-Token':csrf,...options.headers};
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),210000);
  try{const response=await fetch(path,{...options,headers,signal:controller.signal,credentials:'same-origin'});
-  const data=await response.json();if(!response.ok){if(response.status===401&&path!='/auth/login'){showLogin();}throw new Error(data.error||'Не удалось выполнить запрос');}return data;
+  if(response.status>=500)throw new Error('Сервер временно недоступен. Повторите действие чуть позже.');
+  const data=await response.json();
+  if(response.ok)return data;
+  if(response.status===403&&data.code==='csrf_mismatch'&&retryCsrf){
+   const state=await api('/auth/session');
+   if(state.authenticated){
+    csrf=state.csrf;
+    return api(path,options,false);
+   }
+   showLogin();
+  }
+  if(response.status===401&&path!='/auth/login')showLogin();
+  throw new Error(data.error||'Не удалось выполнить запрос');
+ }catch(error){
+  if(error instanceof TypeError)throw new Error('Нет связи с сервером. Проверьте подключение и повторите действие.');
+  throw error;
  }finally{clearTimeout(timer);}
 }
-function showLogin(){$('app').hidden=true;$('login').hidden=false;report=null;$('rows').replaceChildren();if(isAndroidApp)window.location.href='omron-action://reconnect';}
-async function init(){try{const state=await api('/auth/session');csrf=state.csrf||'';if(!state.authenticated){showLogin();return;}$('login').hidden=true;$('app').hidden=false;preset(30);await loadReport();}catch(e){showLogin();$('login-error').textContent='Сервер недоступен. Проверьте подключение.';}}
+let resumeMeasurement=false, initialized=false;
+function showLogin(){
+ const dialog=$('measurement');
+ if(dialog.open){
+  resumeMeasurement=true;
+  dialog.close();
+  $('login-error').textContent='Войдите снова, чтобы продолжить ввод измерения.';
+ }
+ $('app').hidden=true;
+ $('login').hidden=false;
+ report=null;
+ $('rows').replaceChildren();
+ if(isAndroidApp)window.location.href='omron-action://reconnect';
+}
+async function init(){
+ try{
+  const state=await api('/auth/session');
+  csrf=state.csrf||'';
+  initialized=true;
+  if(!state.authenticated){showLogin();return;}
+  $('login-error').textContent='';
+  $('login').hidden=true;
+  $('app').hidden=false;
+  if(!$('from').value)preset(30);
+  if(resumeMeasurement){
+   resumeMeasurement=false;
+   $('measurement').showModal();
+  }else if(!$('measurement').open&&sessionStorage.getItem('omron-pending')){
+   newMeasurement();
+  }
+  await loadReport();
+ }catch(e){
+  $('login-error').textContent=e.message;
+ }
+}
 $('login-form').addEventListener('submit',async e=>{e.preventDefault();$('login-error').textContent='';const button=e.submitter;button.disabled=true;try{const state=await api('/auth/login',{method:'POST',body:JSON.stringify({token:$('token').value.trim()})});csrf=state.csrf;$('token').value='';await init();}catch(error){$('login-error').textContent=error.message;}finally{button.disabled=false;}});
 $('logout').onclick=async()=>{if(isAndroidApp){window.location.href='omron-action://disconnect';return;}try{await api('/auth/logout',{method:'POST',body:'{}'});sessionStorage.removeItem('omron-pending');showLogin();}catch(e){toast(e.message);}};
 function preset(days){const end=new Date(),start=new Date();start.setDate(end.getDate()-days+1);$('from').value=localDate(start);$('to').value=localDate(end);document.querySelectorAll('[data-days]').forEach(b=>b.classList.toggle('selected',Number(b.dataset.days)===days));}
@@ -74,6 +122,13 @@ $('photo').onchange=async()=>{const photo=$('photo').files[0];if(!photo)return;i
 $('measurement-form').onsubmit=async e=>{e.preventDefault();$('save-error').textContent='';if(!frozen){const d=new Date($('measured').value);if(Number.isNaN(d.getTime()))return;const offset=-d.getTimezoneOffset(),sign=offset>=0?'+':'-',tz=sign+String(Math.floor(Math.abs(offset)/60)).padStart(2,'0')+':'+String(Math.abs(offset)%60).padStart(2,'0');frozen={id:currentId,systolic:Number($('systolic').value),diastolic:Number($('diastolic').value),pulse:Number($('pulse').value),measured_at:dateTime(d)+tz,note:$('note').value,confirmed:true};if(frozen.systolic<=frozen.diastolic){frozen=null;$('save-error').textContent='Проверьте верхнее и нижнее давление';return;}sessionStorage.setItem('omron-pending',JSON.stringify(frozen));}
  freezeFields(true);$('save').disabled=true;$('close-dialog').disabled=true;
  try{const result=await api('/measurements',{method:'POST',body:JSON.stringify(frozen)});if(!result.saved)throw new Error('Сервер не подтвердил сохранение');sessionStorage.removeItem('omron-pending');frozen=null;$('measurement').close();toast(result.synced?'Сохранено на сервере и в Google':'Сохранено. Google Таблица обновится автоматически.');await loadReport();}catch(e){$('save-error').textContent=e.name==='AbortError'?'Ответ не получен. Повторите сохранение с тем же ID.':e.message;$('save').textContent='Повторить сохранение';}finally{$('save').disabled=false;$('close-dialog').disabled=false;}};
-setInterval(()=>{if(report&&!document.hidden&&!$('measurement').open)loadReport();},60000);
+function refreshAfterWake(){
+ if(document.hidden||$('measurement').open)return;
+ if(!initialized)init();
+ else if(!$('app').hidden)loadReport();
+}
+window.addEventListener('online',refreshAfterWake);
+document.addEventListener('visibilitychange',refreshAfterWake);
+setInterval(refreshAfterWake,60000);
 init();
 

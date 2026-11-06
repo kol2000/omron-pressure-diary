@@ -21,7 +21,7 @@ journal = Store(os.getenv('DB_PATH', '/data/journal.sqlite'))
 vision_lock = threading.Lock()
 app.secret_key=hashlib.sha256(('web-session:'+TOKEN).encode()).digest()
 app.config.update(SESSION_COOKIE_SECURE=os.getenv('COOKIE_SECURE','true').lower()=='true',
-                  SESSION_COOKIE_HTTPONLY=True,SESSION_COOKIE_SAMESITE='Strict',PERMANENT_SESSION_LIFETIME=timedelta(hours=8))
+                  SESSION_COOKIE_HTTPONLY=True,SESSION_COOKIE_SAMESITE='Strict',PERMANENT_SESSION_LIFETIME=timedelta(days=30))
 login_attempts={}
 login_lock=threading.Lock()
 
@@ -35,7 +35,7 @@ def authenticate():
     if session.get('authenticated'):
         if request.method not in ['GET','HEAD','OPTIONS'] and not secrets.compare_digest(
                 request.headers.get('X-CSRF-Token','').encode(),session.get('csrf','').encode()):
-            return jsonify(error='Обновите страницу и повторите действие'),403
+            return jsonify(error='Сессия обновилась. Повторите действие.',code='csrf_mismatch'),403
         return
     return jsonify(error='Войдите с токеном доступа'),401
 
@@ -170,3 +170,4 @@ def statistics():
         return jsonify(journal.statistics(days))
     except ValueError:
         return jsonify(error='Некорректный период'), 400
+
